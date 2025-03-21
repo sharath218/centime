@@ -7,17 +7,24 @@ import { useTranslation } from "react-i18next";
 const SankeyChart = () => {
   const { nodes, links } = useSelector((state) => state.flow);
   const { t } = useTranslation();
+  
+  // Create a mapping of ids to names for easier lookup
+  const nodeNameMap = {};
+  (nodes || []).forEach(node => {
+    nodeNameMap[node.id] = node.name;
+  });
 
   const data = {
     nodes: (nodes || []).map((node) => ({
-      id: node.id || "unknown",
-      nodeColor: "blue",
-      label: node.name || t("Unknown Node"),
+      id: node.id,
+      // Set both the internal label property and a display name for rendering
+      label: t(node.name || "Unknown Node"),
+      name: t(node.name || "Unknown Node")
     })),
     links: (links || []).map((link) => ({
-      source: link.source || "unknown",
-      target: link.target || "unknown",
-      value: link.value || 0,
+      source: link.source,
+      target: link.target,
+      value: link.value || 0
     })),
   };
 
@@ -41,7 +48,12 @@ const SankeyChart = () => {
     <Box sx={{ height: "500px", mb: 4 }}>
       <ResponsiveSankey
         data={data}
-        getNodeLabel={(node) => node.name}
+        // Make sure to use the full node object with label
+        nodeTooltip={node => node.label}
+        // Use the node's display name for labels
+        label={node => node.label}
+        // This is important - use a custom function to get node labels
+        nodeLabel={node => node.label}
         margin={{ top: 40, right: 160, bottom: 40, left: 50 }}
         align="justify"
         colors={{ scheme: "category10" }}
@@ -66,31 +78,23 @@ const SankeyChart = () => {
         tooltip={({ node, link }) => (
           <div
             style={{
-              background: "red",
+              background: "white",
               padding: "9px 12px",
               border: "1px solid #ccc",
             }}
           >
             {node ? (
               <div>
-                <strong>{t(node.label || node.id)}</strong>
+                <strong>{node.label}</strong>
                 <br />
                 {t("Additional Info")}: {node.additionalInfo || t("N/A")}
               </div>
             ) : (
               <div>
                 <strong>
-                  {t(
-                    nodes.find(n => n.id === link.source)?.name ||
-                      link.source ||
-                      "unknown"
-                  )}{" "}
+                  {nodeNameMap[link.source] || link.source}{" "}
                   →{" "}
-                  {t(
-                    nodes.find(n => n.id === link.target)?.name ||
-                      link.target ||
-                      "unknown"
-                  )}
+                  {nodeNameMap[link.target] || link.target}
                 </strong>
                 <br />
                 {link.value}
@@ -109,6 +113,8 @@ const SankeyChart = () => {
             symbolSize: 14,
             symbolShape: "circle",
             itemTextColor: "#000",
+            // Use translateLabel to make sure legends use names, not IDs
+            translateLabel: id => nodeNameMap[id] || id,
           },
         ]}
       />
