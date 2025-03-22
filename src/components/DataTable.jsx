@@ -49,7 +49,13 @@ const DataTable = () => {
       setSnackbarOpen(true);
       return;
     }
-    dispatch(addNode(newNode));
+
+    const node = {
+      name: newNode.name,
+      id: generateRandomId(),
+      label: newNode.name,
+    }
+    dispatch(addNode(node));
     setOpenNodeDialog(false);
     setNewNode({ id: "", name: "" });
   };
